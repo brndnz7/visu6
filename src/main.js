@@ -415,6 +415,232 @@ function setupProgress() {
   update();
 }
 
+function setupTraining() {
+  const cards = [...document.querySelectorAll('[data-exercise-card]')];
+  const scoreLabel = document.querySelector('#exercise-score-label');
+  const resetButton = document.querySelector('#reset-exercises');
+  const storageKey = 'visu3d-exercise-state';
+  const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+
+  const normalize = (value) => value.trim().replace(/\s+/g, '');
+  const cardIndex = (card) => String(cards.indexOf(card));
+
+  function saveState() {
+    const state = {};
+    cards.forEach((card) => {
+      state[cardIndex(card)] = card.classList.contains('is-complete');
+    });
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  }
+
+  function updateScore() {
+    const done = cards.filter((card) => card.classList.contains('is-complete')).length;
+    scoreLabel.textContent = `${done} / ${cards.length} validé${done > 1 ? 's' : ''}`;
+  }
+
+  function setFeedback(card, ok, message) {
+    const feedback = card.querySelector('.exercise-feedback');
+    feedback.textContent = message;
+    feedback.classList.toggle('is-good', ok);
+    feedback.classList.toggle('is-bad', !ok);
+    card.classList.toggle('is-complete', ok);
+    saveState();
+    updateScore();
+  }
+
+  function validateFill(card) {
+    const inputs = [...card.querySelectorAll('[data-answer]')];
+    const ok = inputs.every((input) => normalize(input.value) === input.dataset.answer);
+    setFeedback(
+      card,
+      ok,
+      ok
+        ? 'Validé : tu peux recoder le squelette de départ.'
+        : 'Pas encore : vérifie la casse et les noms exacts des propriétés Three.js.',
+    );
+  }
+
+  function validateChoice(card) {
+    const group = card.querySelector('[data-choice]');
+    const selected = group.querySelector('input:checked');
+    const ok = selected?.value === group.dataset.choice;
+    setFeedback(
+      card,
+      ok,
+      ok
+        ? 'Correct : pense toujours au rectangle du canvas.'
+        : 'Presque : la formule robuste part de clientX/clientY moins rect.left/top.',
+    );
+  }
+
+  function validateMatch(card) {
+    const selects = [...card.querySelectorAll('[data-match]')];
+    const ok = selects.every((select) => select.value === select.dataset.match);
+    setFeedback(
+      card,
+      ok,
+      ok
+        ? 'Correct : tu distingues bien couleur, normales, brillance et relief réel.'
+        : 'À revoir : displacement déplace les sommets, normalMap change surtout la lumière.',
+    );
+  }
+
+  function validateMulti(card) {
+    const group = card.querySelector('[data-multi-choice]');
+    const expected = group.dataset.multiChoice.split(',').sort().join(',');
+    const selected = [...group.querySelectorAll('input:checked')]
+      .map((input) => input.value)
+      .sort()
+      .join(',');
+    const ok = selected === expected;
+    setFeedback(
+      card,
+      ok,
+      ok
+        ? 'Diagnostic validé : clipping, lumière et ordre de render sont les bons réflexes.'
+        : 'Diagnostic incomplet : cherche les erreurs qui empêchent vraiment le rendu.',
+    );
+  }
+
+  function validateSelf(card) {
+    const note = card.querySelector('[data-self-note]').value.trim();
+    const ok = note.length >= 80;
+    setFeedback(
+      card,
+      ok,
+      ok
+        ? 'Validé : compare ton plan à la grille puis recode-le dans un fichier de test.'
+        : 'Écris plus de détails : vise au moins les étapes géométrie, canvas, texture et needsUpdate.',
+    );
+  }
+
+  function resetSequence(card) {
+    card.sequence = [];
+    card.querySelectorAll('[data-token]').forEach((button) => {
+      button.disabled = false;
+    });
+    card.querySelector('[data-sequence-answer]').textContent = 'Ordre choisi : aucun';
+    const feedback = card.querySelector('.exercise-feedback');
+    feedback.textContent = '';
+    feedback.classList.remove('is-good', 'is-bad');
+    card.classList.remove('is-complete');
+    saveState();
+    updateScore();
+  }
+
+  function selectSequenceToken(card, button) {
+    card.sequence = card.sequence || [];
+    card.sequence.push(button.dataset.token);
+    button.disabled = true;
+    card.querySelector('[data-sequence-answer]').textContent = `Ordre choisi : ${card.sequence.join(' → ')}`;
+
+    const expected = card.querySelector('[data-sequence]').dataset.sequence.split(',');
+    if (card.sequence.length === expected.length) {
+      const ok = card.sequence.join(',') === expected.join(',');
+      setFeedback(
+        card,
+        ok,
+        ok
+          ? 'Parfait : aspect, projection, puis taille du renderer.'
+          : 'Ordre faux : mets à jour aspect, recalcule la projection, puis redimensionne.',
+      );
+    }
+  }
+
+  cards.forEach((card, index) => {
+    if (saved[String(index)]) {
+      card.classList.add('is-complete');
+      const feedback = card.querySelector('.exercise-feedback');
+      feedback.textContent = 'Déjà validé.';
+      feedback.classList.add('is-good');
+    }
+
+    card.querySelectorAll('[data-token]').forEach((button) => {
+      button.addEventListener('click', () => selectSequenceToken(card, button));
+    });
+
+    const resetSequenceButton = card.querySelector('[data-reset-sequence]');
+    resetSequenceButton?.addEventListener('click', () => resetSequence(card));
+
+    card.querySelectorAll('[data-check]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const type = button.dataset.check;
+        if (type === 'fill') validateFill(card);
+        if (type === 'choice') validateChoice(card);
+        if (type === 'match') validateMatch(card);
+        if (type === 'multi') validateMulti(card);
+        if (type === 'self') validateSelf(card);
+      });
+    });
+  });
+
+  resetButton?.addEventListener('click', () => {
+    localStorage.removeItem(storageKey);
+    cards.forEach((card) => {
+      card.classList.remove('is-complete');
+      card.querySelectorAll('input[type="text"], input:not([type]), textarea').forEach((input) => {
+        input.value = '';
+      });
+      card.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((input) => {
+        input.checked = false;
+      });
+      card.querySelectorAll('select').forEach((select) => {
+        select.value = '';
+      });
+      if (card.querySelector('[data-sequence]')) resetSequence(card);
+      const feedback = card.querySelector('.exercise-feedback');
+      feedback.textContent = '';
+      feedback.classList.remove('is-good', 'is-bad');
+    });
+    updateScore();
+  });
+
+  updateScore();
+}
+
+function setupExamTimer() {
+  const startButton = document.querySelector('#start-exam');
+  const resetButton = document.querySelector('#reset-exam');
+  const label = document.querySelector('#exam-timer');
+  if (!startButton || !resetButton || !label) return;
+
+  const totalSeconds = 45 * 60;
+  let remaining = totalSeconds;
+  let intervalId = null;
+
+  function renderTime() {
+    const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
+    const seconds = (remaining % 60).toString().padStart(2, '0');
+    label.textContent = `${minutes}:${seconds}`;
+  }
+
+  startButton.addEventListener('click', () => {
+    if (intervalId) return;
+    intervalId = window.setInterval(() => {
+      remaining = Math.max(0, remaining - 1);
+      renderTime();
+      if (remaining === 0) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+        startButton.textContent = 'Temps écoulé';
+      }
+    }, 1000);
+    startButton.textContent = 'Chrono lancé';
+  });
+
+  resetButton.addEventListener('click', () => {
+    window.clearInterval(intervalId);
+    intervalId = null;
+    remaining = totalSeconds;
+    startButton.textContent = 'Démarrer le chrono';
+    renderTime();
+  });
+
+  renderTime();
+}
+
 setupProgress();
+setupTraining();
+setupExamTimer();
 buildGlobe();
 animate();

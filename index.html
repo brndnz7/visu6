@@ -19,6 +19,7 @@
       </a>
       <nav class="topnav">
         <a href="#demarrer">Démarrer</a>
+        <a href="#entrainement">Entraînement</a>
         <a href="#base">Base Three.js</a>
         <a href="#tp">TP corrigés</a>
         <a href="#memo">Mémo</a>
@@ -49,6 +50,7 @@
         <aside class="toc" aria-label="Sommaire">
           <strong>Sommaire</strong>
           <a href="#demarrer">Démarrer</a>
+          <a href="#entrainement">Entraînement</a>
           <a href="#architecture">Architecture</a>
           <a href="#geometrie">Géométrie</a>
           <a href="#textures">Textures</a>
@@ -107,6 +109,172 @@
               <label><input type="checkbox" data-progress /> Générer un terrain à partir d'une heightmap</label>
               <label><input type="checkbox" data-progress /> Corriger le resize fenêtre/canvas</label>
               <label><input type="checkbox" data-progress /> Déboguer caméra, clipping, lumière et chemins d'assets</label>
+            </div>
+          </section>
+
+          <section id="entrainement" class="band muted">
+            <div class="section-head">
+              <p class="eyebrow">Parcours d'entraînement</p>
+              <h2>Recoder comme en TP noté, étape par étape</h2>
+              <p>
+                L'objectif n'est pas seulement de relire : tu dois être capable de reconstruire
+                les blocs Three.js sans regarder le corrigé. Fais les exercices dans l'ordre,
+                puis termine par le mini-exam blanc.
+              </p>
+            </div>
+
+            <div class="training-dashboard">
+              <article>
+                <span class="tag">Niveau 1</span>
+                <h3>Squelette de scène</h3>
+                <p>Renderer, caméra, resize, boucle de rendu. C'est la base de tous les sujets.</p>
+              </article>
+              <article>
+                <span class="tag">Niveau 2</span>
+                <h3>Objets et textures</h3>
+                <p>Créer un mesh, choisir un matériau, charger color map, normal map et specular map.</p>
+              </article>
+              <article>
+                <span class="tag">Niveau 3</span>
+                <h3>Interaction</h3>
+                <p>Convertir la souris en NDC, lancer un raycaster, sélectionner et restaurer un objet.</p>
+              </article>
+              <article>
+                <span class="tag">Niveau 4</span>
+                <h3>Terrain et debug</h3>
+                <p>Heightmap, normal map, canvas, chemins d'assets, erreurs classiques.</p>
+              </article>
+            </div>
+
+            <div class="exercise-score" aria-live="polite">
+              <div>
+                <strong>Score exercices</strong>
+                <span id="exercise-score-label">0 / 0 validé</span>
+              </div>
+              <button type="button" class="secondary-action" id="reset-exercises">Réinitialiser les exercices</button>
+            </div>
+
+            <div class="practice-grid">
+              <article class="practice-card" data-exercise-card>
+                <div class="practice-meta"><span>Drill 1</span><strong>Initialisation</strong></div>
+                <h3>Complète les trois lignes manquantes</h3>
+                <p>Tu dois retrouver la structure minimale vue dans tous les TP.</p>
+                <pre><code>const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.<input data-answer="setSize" aria-label="Méthode renderer" />(
+  container.clientWidth,
+  container.clientHeight
+);
+container.appendChild(renderer.<input data-answer="domElement" aria-label="Canvas renderer" />);
+
+const scene = new THREE.<input data-answer="Scene" aria-label="Constructeur scene" />();</code></pre>
+                <button type="button" class="check-action" data-check="fill">Valider</button>
+                <p class="exercise-feedback" aria-live="polite"></p>
+              </article>
+
+              <article class="practice-card" data-exercise-card>
+                <div class="practice-meta"><span>Drill 2</span><strong>Resize</strong></div>
+                <h3>Remets le resize dans le bon ordre</h3>
+                <p>Clique les étapes dans l'ordre exact à écrire pendant l'exam.</p>
+                <div class="sequence-pool" data-sequence="aspect,projection,size">
+                  <button type="button" data-token="size">renderer.setSize(width, height)</button>
+                  <button type="button" data-token="projection">camera.updateProjectionMatrix()</button>
+                  <button type="button" data-token="aspect">camera.aspect = width / height</button>
+                </div>
+                <div class="sequence-answer" data-sequence-answer>Ordre choisi : aucun</div>
+                <button type="button" class="secondary-action" data-reset-sequence>Recommencer</button>
+                <p class="exercise-feedback" aria-live="polite"></p>
+              </article>
+
+              <article class="practice-card" data-exercise-card>
+                <div class="practice-meta"><span>Drill 3</span><strong>Raycaster</strong></div>
+                <h3>Choisis la bonne formule NDC</h3>
+                <p>Cas robuste : le canvas ne prend pas forcément toute la fenêtre.</p>
+                <div class="choice-list" data-choice="b">
+                  <label><input type="radio" name="ndc" value="a" /> <code>mouse.x = event.clientX / width</code></label>
+                  <label><input type="radio" name="ndc" value="b" /> <code>((clientX - rect.left) / rect.width) * 2 - 1</code></label>
+                  <label><input type="radio" name="ndc" value="c" /> <code>clientX * 2 + rect.left</code></label>
+                </div>
+                <button type="button" class="check-action" data-check="choice">Valider</button>
+                <p class="exercise-feedback" aria-live="polite"></p>
+              </article>
+
+              <article class="practice-card" data-exercise-card>
+                <div class="practice-meta"><span>Drill 4</span><strong>Textures</strong></div>
+                <h3>Associe chaque carte à son rôle</h3>
+                <div class="match-list">
+                  <label>Color map <select data-match="couleur"><option value="">Choisir</option><option value="relief">Relief réel</option><option value="couleur">Couleur visible</option><option value="brillance">Brillance</option><option value="normales">Éclairage de détail</option></select></label>
+                  <label>Normal map <select data-match="normales"><option value="">Choisir</option><option value="relief">Relief réel</option><option value="couleur">Couleur visible</option><option value="brillance">Brillance</option><option value="normales">Éclairage de détail</option></select></label>
+                  <label>Specular map <select data-match="brillance"><option value="">Choisir</option><option value="relief">Relief réel</option><option value="couleur">Couleur visible</option><option value="brillance">Brillance</option><option value="normales">Éclairage de détail</option></select></label>
+                  <label>Displacement map <select data-match="relief"><option value="">Choisir</option><option value="relief">Relief réel</option><option value="couleur">Couleur visible</option><option value="brillance">Brillance</option><option value="normales">Éclairage de détail</option></select></label>
+                </div>
+                <button type="button" class="check-action" data-check="match">Valider</button>
+                <p class="exercise-feedback" aria-live="polite"></p>
+              </article>
+
+              <article class="practice-card wide" data-exercise-card>
+                <div class="practice-meta"><span>Debug</span><strong>Écran blanc</strong></div>
+                <h3>Diagnostic : pourquoi rien ne s'affiche ?</h3>
+                <p>Lis ce code comme en exam. Sélectionne toutes les erreurs probables.</p>
+                <pre><code>const camera = new THREE.PerspectiveCamera(45, width / height, 10, 20);
+camera.position.set(0, 2, 50);
+
+const material = new THREE.MeshPhongMaterial({ map: earthTexture });
+const earth = new THREE.Mesh(geometry, material);
+scene.add(earth);
+
+renderer.render(camera, scene);</code></pre>
+                <div class="choice-list" data-multi-choice="a,c,d">
+                  <label><input type="checkbox" value="a" /> <code>near/far</code> coupent le globe placé trop loin.</label>
+                  <label><input type="checkbox" value="b" /> <code>MeshPhongMaterial</code> ne peut jamais recevoir de texture.</label>
+                  <label><input type="checkbox" value="c" /> Il manque une lumière pour voir correctement le matériau Phong.</label>
+                  <label><input type="checkbox" value="d" /> L'ordre correct est <code>renderer.render(scene, camera)</code>.</label>
+                </div>
+                <button type="button" class="check-action" data-check="multi">Valider le diagnostic</button>
+                <p class="exercise-feedback" aria-live="polite"></p>
+              </article>
+
+              <article class="practice-card wide" data-exercise-card>
+                <div class="practice-meta"><span>Recodage</span><strong>Sans regarder</strong></div>
+                <h3>Écris ton plan de code en 8 minutes</h3>
+                <p>
+                  Sujet : créer un terrain depuis une heightmap avec couleur par altitude.
+                  Écris les étapes ou le pseudo-code, puis compare avec la grille.
+                </p>
+                <textarea data-self-note placeholder="1. Créer PlaneGeometry..."></textarea>
+                <details class="correction-panel">
+                  <summary>Afficher la grille de correction</summary>
+                  <ul>
+                    <li>Créer un <code>PlaneGeometry</code> subdivisé et le tourner avec <code>rotateX(-Math.PI / 2)</code>.</li>
+                    <li>Charger l'image dans <code>Image</code>, puis la dessiner dans un canvas.</li>
+                    <li>Créer une <code>CanvasTexture</code> pour <code>displacementMap</code> et régler <code>displacementScale</code>.</li>
+                    <li>Lire les pixels avec <code>getImageData()</code>.</li>
+                    <li>Calculer la normal map avec les voisins et normaliser le vecteur.</li>
+                    <li>Créer une color map par gradient puis mettre <code>material.needsUpdate = true</code>.</li>
+                  </ul>
+                </details>
+                <button type="button" class="check-action" data-check="self">Je l'ai fait sérieusement</button>
+                <p class="exercise-feedback" aria-live="polite"></p>
+              </article>
+            </div>
+
+            <div class="exam-simulator">
+              <div class="section-head compact">
+                <p class="eyebrow">Exam blanc</p>
+                <h2>Simulation 45 minutes</h2>
+                <p>Utilise ce scénario pour t'entraîner à recoder sous pression.</p>
+              </div>
+              <div class="exam-toolbar">
+                <button type="button" class="check-action" id="start-exam">Démarrer le chrono</button>
+                <button type="button" class="secondary-action" id="reset-exam">Réinitialiser</button>
+                <strong id="exam-timer">45:00</strong>
+              </div>
+              <ol class="exam-steps">
+                <li><strong>0-8 min</strong> : créer renderer, scène, caméra, resize et boucle.</li>
+                <li><strong>8-18 min</strong> : ajouter une sphère texturée ou un plan terrain avec lumière.</li>
+                <li><strong>18-28 min</strong> : ajouter contrôles caméra et animation simple.</li>
+                <li><strong>28-38 min</strong> : ajouter raycaster ou chargement d'asset externe.</li>
+                <li><strong>38-45 min</strong> : tester chemins, console, resize, lumière, clipping.</li>
+              </ol>
             </div>
           </section>
 

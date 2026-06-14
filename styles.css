@@ -46,9 +46,12 @@ code {
   background: #f2f5f9;
   padding: 0.05rem 0.28rem;
   font-size: 0.9em;
+  overflow-wrap: anywhere;
 }
 
 pre {
+  contain: paint;
+  max-width: 100%;
   overflow: auto;
   border: 1px solid #dce3ee;
   border-radius: 8px;
@@ -59,10 +62,14 @@ pre {
 }
 
 pre code {
+  display: block;
+  min-width: 100%;
+  width: max-content;
   border: 0;
   background: transparent;
   color: inherit;
   padding: 0;
+  overflow-wrap: normal;
 }
 
 img {
@@ -72,6 +79,11 @@ img {
 
 button,
 input {
+  font: inherit;
+}
+
+select,
+textarea {
   font: inherit;
 }
 
@@ -407,6 +419,7 @@ input {
   display: flex;
   align-items: start;
   gap: 0.65rem;
+  min-width: 0;
   min-height: 56px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -419,6 +432,278 @@ input {
   height: 1.05rem;
   margin-top: 0.2rem;
   accent-color: var(--teal);
+}
+
+.training-dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.training-dashboard article,
+.practice-card,
+.exam-simulator {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 1.15rem;
+}
+
+.training-dashboard h3,
+.practice-card h3,
+.exam-simulator h3 {
+  margin: 0.55rem 0 0.45rem;
+}
+
+.training-dashboard p,
+.practice-card p {
+  color: var(--muted);
+}
+
+.exercise-score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.25rem 0;
+  border: 1px solid #b8d8d4;
+  border-left: 6px solid var(--teal);
+  border-radius: 8px;
+  background: #eefaf8;
+  padding: 1rem;
+}
+
+.exercise-score strong,
+.exercise-score span {
+  display: block;
+}
+
+.exercise-score span {
+  color: var(--muted);
+}
+
+.practice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.practice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.practice-card.wide {
+  grid-column: 1 / -1;
+}
+
+.practice-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.practice-meta span {
+  border-radius: 999px;
+  background: #eef2f7;
+  color: var(--blue);
+  padding: 0.16rem 0.5rem;
+  font-weight: 900;
+}
+
+.practice-meta strong {
+  color: var(--ink);
+}
+
+.practice-card pre {
+  max-width: 100%;
+  margin: 0;
+}
+
+.practice-card pre input {
+  width: min(180px, 100%);
+  border: 1px solid #546274;
+  border-radius: 5px;
+  background: #f8fafc;
+  color: #111820;
+  padding: 0.1rem 0.35rem;
+}
+
+.check-action,
+.secondary-action {
+  align-self: flex-start;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 850;
+  padding: 0.58rem 0.85rem;
+}
+
+.check-action {
+  background: var(--blue);
+  color: white;
+}
+
+.check-action:hover,
+.check-action:focus {
+  background: #1c4687;
+}
+
+.secondary-action {
+  border-color: var(--line);
+  background: white;
+  color: var(--ink);
+}
+
+.secondary-action:hover,
+.secondary-action:focus {
+  background: #edf2f8;
+}
+
+.exercise-feedback {
+  min-height: 1.6rem;
+  margin: 0;
+  font-weight: 800;
+}
+
+.exercise-feedback.is-good {
+  color: var(--green);
+}
+
+.exercise-feedback.is-bad {
+  color: var(--red);
+}
+
+.practice-card.is-complete {
+  border-color: #92c7a8;
+  box-shadow: inset 0 0 0 2px rgba(36, 107, 69, 0.14);
+}
+
+.sequence-pool {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sequence-pool button {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #f8fafc;
+  cursor: pointer;
+  padding: 0.65rem;
+  text-align: left;
+}
+
+.sequence-pool button:disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+
+.sequence-answer {
+  border: 1px dashed #aab4c2;
+  border-radius: 7px;
+  background: #f8fafc;
+  color: var(--muted);
+  padding: 0.75rem;
+}
+
+.choice-list,
+.match-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.choice-list label,
+.match-list label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #f8fafc;
+  padding: 0.75rem;
+}
+
+.choice-list input {
+  margin-top: 0.35rem;
+  accent-color: var(--teal);
+}
+
+.match-list label {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.match-list select {
+  min-width: 190px;
+  border: 1px solid #bdc7d4;
+  border-radius: 6px;
+  background: white;
+  padding: 0.42rem 0.5rem;
+}
+
+.practice-card textarea {
+  min-height: 160px;
+  resize: vertical;
+  border: 1px solid #bdc7d4;
+  border-radius: 8px;
+  background: #fbfcfe;
+  padding: 0.9rem;
+}
+
+.correction-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 0.85rem;
+}
+
+.correction-panel summary {
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.exam-simulator {
+  margin-top: 1rem;
+  border-left: 6px solid var(--red);
+}
+
+.section-head.compact {
+  margin-bottom: 1rem;
+}
+
+.section-head.compact h2 {
+  font-size: clamp(1.55rem, 2vw, 2.15rem);
+}
+
+.exam-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+#exam-timer {
+  border-radius: 7px;
+  background: #111820;
+  color: white;
+  padding: 0.55rem 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.exam-steps {
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+.exam-steps li {
+  margin: 0.55rem 0;
 }
 
 .lesson-grid,
@@ -437,6 +722,7 @@ input {
 .note,
 .snippet,
 .formula-panel {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -476,6 +762,11 @@ input {
   grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
   gap: clamp(1rem, 3vw, 2rem);
   align-items: start;
+}
+
+.split > *,
+.two-columns > * {
+  min-width: 0;
 }
 
 .formula {
@@ -719,7 +1010,8 @@ input {
   .asset-grid,
   .concept-row,
   .mistake-grid,
-  .pipeline {
+  .pipeline,
+  .training-dashboard {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -729,6 +1021,10 @@ input {
 }
 
 @media (max-width: 760px) {
+  .band.muted::before {
+    inset: 0;
+  }
+
   .topbar {
     align-items: flex-start;
     flex-direction: column;
@@ -772,8 +1068,25 @@ input {
   .asset-grid,
   .concept-row,
   .mistake-grid,
-  .pipeline {
+  .pipeline,
+  .training-dashboard,
+  .practice-grid {
     grid-template-columns: 1fr;
+  }
+
+  .exercise-score {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .match-list label {
+    align-items: stretch;
+  }
+
+  .match-list select,
+  .check-action,
+  .secondary-action {
+    width: 100%;
   }
 
   .progress-panel {
