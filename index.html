@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support Visualisation 3D - TP noté</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+    <header class="topbar" aria-label="Navigation principale">
+      <a class="brand" href="#top" aria-label="Accueil du support">
+        <span class="brand-mark">3D</span>
+        <span>
+          <strong>Visualisation 3D</strong>
+          <small>Support TP noté</small>
+        </span>
+      </a>
+      <nav class="topnav">
+        <a href="#demarrer">Démarrer</a>
+        <a href="#base">Base Three.js</a>
+        <a href="#tp">TP corrigés</a>
+        <a href="#memo">Mémo</a>
+        <a href="#quiz">Quiz</a>
+      </nav>
+    </header>
+
+    <main id="contenu">
+      <section id="top" class="lab-hero" aria-label="Mini laboratoire Three.js">
+        <canvas id="three-lab" aria-label="Démonstration Three.js interactive"></canvas>
+        <div class="hero-copy">
+          <p class="eyebrow">Préparation rapide et pratique</p>
+          <h1>Support complet pour réussir ton TP noté de Visualisation 3D</h1>
+          <p>
+            Basé sur les trois corrigés présents dans le dossier : globe texturé,
+            environnement 3D navigable et terrain par heightmap.
+          </p>
+        </div>
+        <div class="scene-toolbar" aria-label="Contrôles de la scène">
+          <button class="scene-mode is-active" type="button" data-mode="globe">Globe</button>
+          <button class="scene-mode" type="button" data-mode="terrain">Terrain</button>
+          <button class="scene-mode" type="button" data-mode="raycast">Raycast</button>
+        </div>
+        <div id="scene-hint" class="scene-hint">Drag pour tourner, molette pour zoomer</div>
+      </section>
+
+      <div class="layout">
+        <aside class="toc" aria-label="Sommaire">
+          <strong>Sommaire</strong>
+          <a href="#demarrer">Démarrer</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#geometrie">Géométrie</a>
+          <a href="#textures">Textures</a>
+          <a href="#lumieres">Lumières</a>
+          <a href="#camera">Caméra</a>
+          <a href="#interaction">Interaction</a>
+          <a href="#chargement">Chargement</a>
+          <a href="#terrain">Terrain</a>
+          <a href="#tp">TP corrigés</a>
+          <a href="#snippets">Snippets</a>
+          <a href="#quiz">Quiz</a>
+        </aside>
+
+        <div class="content">
+          <section id="demarrer" class="band">
+            <div class="section-head">
+              <p class="eyebrow">Vue d'ensemble</p>
+              <h2>Ce que tu dois savoir refaire sans hésiter</h2>
+              <p>
+                Le TP noté va probablement combiner les gestes vus dans les corrigés :
+                initialiser une scène Three.js, charger des assets, manipuler la caméra,
+                texturer un objet, interagir avec la souris et produire un rendu lisible.
+              </p>
+            </div>
+
+            <div class="alert">
+              <strong>Note sur le cours PDF</strong>
+              <span>
+                Le fichier <code>coursvisu6.pdf</code> existe dans le dossier mais il fait
+                0 octet. Le site s'appuie donc sur les trois TP corrigés et sur les notions
+                Three.js qu'ils mobilisent.
+              </span>
+            </div>
+
+            <div class="progress-panel">
+              <div>
+                <h3>Checklist express</h3>
+                <p>Coche les points quand tu les maîtrises. La progression reste enregistrée dans ton navigateur.</p>
+              </div>
+              <div class="progress-meter" aria-live="polite">
+                <span id="progress-label">0%</span>
+                <div class="meter"><span id="progress-bar"></span></div>
+              </div>
+            </div>
+
+            <div class="check-grid">
+              <label><input type="checkbox" data-progress /> Créer <code>renderer</code>, <code>scene</code>, <code>camera</code></label>
+              <label><input type="checkbox" data-progress /> Comprendre <code>fov</code>, <code>aspect</code>, <code>near</code>, <code>far</code></label>
+              <label><input type="checkbox" data-progress /> Construire <code>Geometry + Material + Mesh</code></label>
+              <label><input type="checkbox" data-progress /> Charger une texture et gérer l'asynchrone</label>
+              <label><input type="checkbox" data-progress /> Choisir une lumière adaptée au matériau</label>
+              <label><input type="checkbox" data-progress /> Mettre en place <code>requestAnimationFrame</code></label>
+              <label><input type="checkbox" data-progress /> Convertir la souris en coordonnées NDC</label>
+              <label><input type="checkbox" data-progress /> Utiliser <code>Raycaster</code> pour sélectionner</label>
+              <label><input type="checkbox" data-progress /> Charger un CSV ou un modèle externe</label>
+              <label><input type="checkbox" data-progress /> Générer un terrain à partir d'une heightmap</label>
+              <label><input type="checkbox" data-progress /> Corriger le resize fenêtre/canvas</label>
+              <label><input type="checkbox" data-progress /> Déboguer caméra, clipping, lumière et chemins d'assets</label>
+            </div>
+          </section>
+
+          <section id="base" class="band muted">
+            <div class="section-head">
+              <p class="eyebrow">Base commune</p>
+              <h2>Le squelette Three.js à connaître</h2>
+              <p>
+                Tous les TP suivent la même colonne vertébrale : renderer WebGL,
+                caméra perspective, scène, objets, contrôles, boucle de rendu.
+              </p>
+            </div>
+
+            <div id="architecture" class="lesson-grid">
+              <article class="lesson-card">
+                <span class="tag">Renderer</span>
+                <h3><code>WebGLRenderer</code></h3>
+                <p>
+                  Il dessine la scène dans un canvas. Dans les TP : <code>antialias: true</code>,
+                  ajout du canvas dans <code>#container</code>, puis <code>renderer.render(scene, camera)</code>.
+                </p>
+                <ul>
+                  <li><code>setSize(width, height)</code> définit la résolution d'affichage.</li>
+                  <li><code>setClearColor(color, alpha)</code> définit le fond si pas de background.</li>
+                  <li>Au resize, il faut redimensionner le renderer et mettre à jour la caméra.</li>
+                </ul>
+              </article>
+
+              <article class="lesson-card">
+                <span class="tag">Scene</span>
+                <h3><code>Scene</code> et graphe</h3>
+                <p>
+                  La scène contient des <code>Object3D</code> : meshes, lumières, helpers,
+                  groupes, modèles chargés. Un objet peut avoir des enfants, comme les capitales
+                  ajoutées au mesh <code>earth</code>.
+                </p>
+                <ul>
+                  <li><code>scene.add(object)</code> ajoute au monde.</li>
+                  <li><code>earth.add(capSphere)</code> attache au repère local du globe.</li>
+                  <li>Les transformations parentales affectent les enfants.</li>
+                </ul>
+              </article>
+
+              <article class="lesson-card">
+                <span class="tag">Camera</span>
+                <h3><code>PerspectiveCamera</code></h3>
+                <p>
+                  Elle simule une caméra réelle avec perspective. Les paramètres clés sont
+                  <code>fov</code>, <code>aspect</code>, <code>near</code>, <code>far</code>.
+                </p>
+                <ul>
+                  <li><code>position.set(x, y, z)</code> place la caméra.</li>
+                  <li><code>lookAt(0, 0, 0)</code> l'oriente vers une cible.</li>
+                  <li><code>near/far</code> trop serrés peuvent couper les objets.</li>
+                </ul>
+              </article>
+
+              <article class="lesson-card">
+                <span class="tag">Boucle</span>
+                <h3>Rendu continu</h3>
+                <p>
+                  La boucle <code>render()</code> met à jour les contrôles, anime les objets,
+                  lance le raycasting, dessine la scène puis rappelle <code>requestAnimationFrame</code>.
+                </p>
+                <ul>
+                  <li>Animation stable : modifier peu de choses à chaque frame.</li>
+                  <li>Navigation FPS : multiplier les déplacements par <code>delta</code>.</li>
+                  <li>Les stats FPS du TP1 servent à surveiller la performance.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section id="geometrie" class="band">
+            <div class="section-head">
+              <p class="eyebrow">Objets 3D</p>
+              <h2>Géométries, matériaux et transformations</h2>
+            </div>
+
+            <div class="split">
+              <div>
+                <h3>La formule à retenir</h3>
+                <p class="formula"><code>Mesh = Geometry + Material</code></p>
+                <p>
+                  La géométrie décrit les sommets et faces. Le matériau décrit comment la
+                  surface réagit à la lumière, aux textures et au rendu. Le mesh est l'objet
+                  placé dans la scène.
+                </p>
+                <ul class="dense-list">
+                  <li><code>SphereGeometry(radius, widthSegments, heightSegments)</code> pour le globe.</li>
+                  <li><code>PlaneGeometry(width, height, widthSegments, heightSegments)</code> pour le terrain.</li>
+                  <li>Plus il y a de subdivisions, plus le displacement peut créer du relief.</li>
+                  <li><code>rotateX(-Math.PI / 2)</code> couche un plan vertical pour en faire un sol.</li>
+                  <li><code>position</code>, <code>rotation</code>, <code>scale</code> sont dans le repère du parent.</li>
+                </ul>
+              </div>
+
+              <div class="note-stack">
+                <div class="note">
+                  <strong><code>MeshBasicMaterial</code></strong>
+                  <span>Ne réagit pas à la lumière. Utile pour des marqueurs, labels 3D, debug.</span>
+                </div>
+                <div class="note">
+                  <strong><code>MeshPhongMaterial</code></strong>
+                  <span>Réagit aux lumières, accepte <code>specular</code>, <code>shininess</code>, <code>normalMap</code>, <code>displacementMap</code>.</span>
+                </div>
+                <div class="note">
+                  <strong><code>MeshLambertMaterial</code></strong>
+                  <span>Éclairage diffus, souvent utilisé pour surligner un objet sélectionné.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="textures" class="band muted">
+            <div class="section-head">
+              <p class="eyebrow">Textures</p>
+              <h2>Cartes d'image : couleur, relief, brillance</h2>
+              <p>
+                Le TP globe et le TP terrain montrent les cartes essentielles. Une texture
+                peut venir d'un fichier image ou d'un canvas généré en JavaScript.
+              </p>
+            </div>
+
+            <div class="asset-grid" aria-label="Assets étudiés">
+              <figure>
+                <img src="/tp1_globe-main/tp1_globe-main/assets/earthmap4k.jpg" alt="Texture couleur de la Terre" />
+                <figcaption><strong>Color map</strong><span><code>material.map</code></span></figcaption>
+              </figure>
+              <figure>
+                <img src="/tp1_globe-main/tp1_globe-main/assets/earth_normalmap_flat4k.jpg" alt="Normal map de la Terre" />
+                <figcaption><strong>Normal map</strong><span><code>material.normalMap</code></span></figcaption>
+              </figure>
+              <figure>
+                <img src="/tp1_globe-main/tp1_globe-main/assets/earthspec4k.jpg" alt="Specular map de la Terre" />
+                <figcaption><strong>Specular map</strong><span><code>material.specularMap</code></span></figcaption>
+              </figure>
+              <figure>
+                <img src="/tp3_terrain_part1-main/tp3_terrain_part1-main/terrains/heightmap_scotland.png" alt="Heightmap utilisée pour le terrain" />
+                <figcaption><strong>Heightmap</strong><span><code>displacementMap</code></span></figcaption>
+              </figure>
+            </div>
+
+            <div class="concept-row">
+              <article>
+                <h3><code>map</code></h3>
+                <p>Couleur de base de la surface. Sur le globe, c'est l'image visible des continents et océans.</p>
+              </article>
+              <article>
+                <h3><code>normalMap</code></h3>
+                <p>Modifie les normales pour simuler de petits reliefs sans déplacer les sommets.</p>
+              </article>
+              <article>
+                <h3><code>specularMap</code></h3>
+                <p>Contrôle où apparaissent les reflets. Dans le TP globe, les océans brillent plus que les continents.</p>
+              </article>
+              <article>
+                <h3><code>displacementMap</code></h3>
+                <p>Déplace réellement les sommets. Il faut une géométrie suffisamment subdivisée.</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="lumieres" class="band">
+            <div class="section-head">
+              <p class="eyebrow">Éclairage</p>
+              <h2>Choisir la bonne lumière</h2>
+            </div>
+
+            <table class="reference-table">
+              <thead>
+                <tr>
+                  <th>Lumière</th>
+                  <th>Utilisation dans les TP</th>
+                  <th>À retenir</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>AmbientLight</code></td>
+                  <td>Éclairage minimal du globe.</td>
+                  <td>Éclaire partout pareil, ne donne pas de direction ni de relief.</td>
+                </tr>
+                <tr>
+                  <td><code>DirectionalLight</code></td>
+                  <td>Soleil du globe, lumière du terrain.</td>
+                  <td>Ses rayons sont parallèles. Sa position représente surtout une direction.</td>
+                </tr>
+                <tr>
+                  <td><code>HemisphereLight</code></td>
+                  <td>Ambiance de l'appartement et du terrain.</td>
+                  <td>Combine couleur du ciel et couleur du sol, pratique pour une scène lisible.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section id="camera" class="band muted">
+            <div class="section-head">
+              <p class="eyebrow">Navigation</p>
+              <h2>Caméras et contrôles</h2>
+            </div>
+
+            <div class="two-columns">
+              <article>
+                <h3><code>OrbitControls</code></h3>
+                <p>
+                  Utilisé dans les TP globe et terrain. La caméra orbite autour d'une cible.
+                  C'est idéal pour inspecter un objet central.
+                </p>
+                <ul>
+                  <li>Appeler <code>controls.update()</code> dans la boucle.</li>
+                  <li>Associer les contrôles au <code>renderer.domElement</code>.</li>
+                  <li>Très pratique avec <code>AxesHelper</code> et <code>GridHelper</code>.</li>
+                </ul>
+              </article>
+
+              <article>
+                <h3><code>MyFirstPersonControls</code></h3>
+                <p>
+                  Utilisé dans le TP environnement. La caméra se comporte comme un visiteur
+                  dans l'appartement : ZQSD/WASD ou flèches, souris maintenue pour regarder.
+                </p>
+                <ul>
+                  <li>Le déplacement se fait dans le repère local de la caméra avec <code>translateZ</code> et <code>translateX</code>.</li>
+                  <li><code>delta</code> rend la vitesse indépendante du nombre de FPS.</li>
+                  <li>La hauteur de regard est forcée avec <code>camera.position.y = lookHeight</code>.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section id="interaction" class="band">
+            <div class="section-head">
+              <p class="eyebrow">Interaction</p>
+              <h2>Raycasting, souris et sélection</h2>
+              <p>
+                Le raycasting transforme une position 2D de souris en rayon 3D lancé depuis
+                la caméra. On récupère ensuite les objets intersectés.
+              </p>
+            </div>
+
+            <div class="pipeline">
+              <div><span>1</span><strong>Mouse event</strong><small><code>clientX/clientY</code></small></div>
+              <div><span>2</span><strong>NDC</strong><small><code>[-1, 1]</code></small></div>
+              <div><span>3</span><strong>Raycaster</strong><small><code>setFromCamera</code></small></div>
+              <div><span>4</span><strong>Intersections</strong><small><code>intersectObjects</code></small></div>
+              <div><span>5</span><strong>Réaction</strong><small>couleur, label, sélection</small></div>
+            </div>
+
+            <div class="split">
+              <div>
+                <h3>Formule NDC</h3>
+                <pre><code>mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;</code></pre>
+                <p>
+                  Si le canvas ne prend pas toute la fenêtre, il faut utiliser le rectangle
+                  du canvas avec <code>getBoundingClientRect()</code>.
+                </p>
+              </div>
+              <div>
+                <h3>Deux usages vus</h3>
+                <ul class="dense-list">
+                  <li>TP1 : survol des capitales, changement de couleur, bulle d'info, pause de l'animation.</li>
+                  <li>TP2 : clic droit sur un mesh de l'appartement, remplacement temporaire du matériau.</li>
+                  <li>Extension possible : collision FPS avec un rayon lancé dans la direction du mouvement.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section id="chargement" class="band muted">
+            <div class="section-head">
+              <p class="eyebrow">Données externes</p>
+              <h2>Charger fichiers, CSV et modèles</h2>
+            </div>
+
+            <div class="lesson-grid">
+              <article class="lesson-card">
+                <span class="tag">Textures</span>
+                <h3><code>TextureLoader</code></h3>
+                <p>
+                  Charge une image et produit une texture. Le callback <code>onLoad</code>
+                  sert à relancer un rendu ou à déclencher la suite.
+                </p>
+              </article>
+              <article class="lesson-card">
+                <span class="tag">CSV</span>
+                <h3><code>fetch()</code> + parsing</h3>
+                <p>
+                  Le TP globe charge les capitales en CSV, ignore la première ligne, convertit
+                  latitude/longitude en coordonnées 3D puis crée une sphère par capitale.
+                </p>
+              </article>
+              <article class="lesson-card">
+                <span class="tag">Modèle</span>
+                <h3><code>ColladaLoader</code></h3>
+                <p>
+                  Le TP environnement charge <code>model.dae</code>, ajoute <code>collada.scene</code>
+                  à la scène, puis parcourt le graphe pour récupérer tous les meshes.
+                </p>
+              </article>
+              <article class="lesson-card">
+                <span class="tag">Canvas</span>
+                <h3><code>CanvasTexture</code></h3>
+                <p>
+                  Le TP terrain transforme une heightmap en texture de déplacement, en normal map
+                  et en carte de couleur calculée par gradient.
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section id="terrain" class="band">
+            <div class="section-head">
+              <p class="eyebrow">Terrain</p>
+              <h2>Heightmap, normal map et gradient d'altitude</h2>
+            </div>
+
+            <div class="split">
+              <div>
+                <h3>Principe</h3>
+                <p>
+                  Une heightmap est une image en niveaux de gris. Chaque pixel représente une
+                  altitude : noir bas, blanc haut. Three.js utilise cette image comme
+                  <code>displacementMap</code> pour déplacer les sommets du plan.
+                </p>
+                <ol class="steps">
+                  <li>Créer un <code>PlaneGeometry</code> avec beaucoup de subdivisions.</li>
+                  <li>Charger la heightmap dans un <code>Image</code>.</li>
+                  <li>Dessiner l'image dans un canvas pour lire les pixels.</li>
+                  <li>Créer une <code>CanvasTexture</code> et l'assigner à <code>displacementMap</code>.</li>
+                  <li>Calculer une normal map avec Sobel pour améliorer l'éclairage.</li>
+                  <li>Créer une carte de couleurs à partir d'un gradient d'altitude.</li>
+                </ol>
+              </div>
+              <div class="formula-panel">
+                <h3>Normal map Sobel</h3>
+                <p>
+                  Le filtre compare les voisins d'un pixel pour estimer la pente :
+                  <code>dx</code> horizontal, <code>dy</code> vertical. Le vecteur
+                  <code>(-dx, -dy, z)</code> est normalisé puis converti en couleur RGB.
+                </p>
+                <pre><code>normalData.r = 0.5 * (normal.x + 1) * 255;
+normalData.g = 0.5 * (normal.y + 1) * 255;
+normalData.b = 0.5 * (normal.z + 1) * 255;</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <section id="tp" class="band muted">
+            <div class="section-head">
+              <p class="eyebrow">Corrigés analysés</p>
+              <h2>Ce que chaque TP t'entraîne à refaire</h2>
+            </div>
+
+            <div class="tp-grid">
+              <article class="tp-card">
+                <div class="tp-number">TP1</div>
+                <h3>Globe texturé et capitales</h3>
+                <ul>
+                  <li>Sphère avec <code>MeshPhongMaterial</code>, color map, normal map, specular map.</li>
+                  <li>Couche de nuages transparente légèrement agrandie.</li>
+                  <li>Lumière ambiante + directionnelle, GUI, stats FPS.</li>
+                  <li>CSV des capitales, conversion latitude/longitude vers <code>Vector3</code>.</li>
+                  <li>Raycaster au survol, label HTML, changement de couleur, pause animation.</li>
+                </ul>
+                <a href="/tp1_globe-main/tp1_globe-main/js/main.js">Voir le corrigé</a>
+              </article>
+
+              <article class="tp-card">
+                <div class="tp-number">TP2</div>
+                <h3>Environnement navigable</h3>
+                <ul>
+                  <li>Chargement d'un modèle <code>.dae</code> avec <code>ColladaLoader</code>.</li>
+                  <li>Parcours du graphe de scène pour collecter les meshes interactifs.</li>
+                  <li>Contrôles première personne personnalisés, vitesse et hauteur de regard.</li>
+                  <li>Fullscreen avec la touche <code>F</code>.</li>
+                  <li>Clic droit, raycasting, sélection d'objet et restauration du matériau.</li>
+                </ul>
+                <a href="/tp2_environnement-main/tp2_environnement-main/js/main.js">Voir le corrigé</a>
+              </article>
+
+              <article class="tp-card">
+                <div class="tp-number">TP3</div>
+                <h3>Terrain par heightmap</h3>
+                <ul>
+                  <li>Plan très subdivisé, ratio adapté à l'image Écosse.</li>
+                  <li>Displacement map créée depuis une heightmap.</li>
+                  <li>Normal map calculée par filtre de Sobel.</li>
+                  <li>Color map générée avec un gradient altitude.</li>
+                  <li>Lumière directionnelle + hemisphere, OrbitControls, debug helpers.</li>
+                </ul>
+                <a href="/tp3_terrain_part1-main/tp3_terrain_part1-main/js/main.js">Voir le corrigé</a>
+              </article>
+            </div>
+          </section>
+
+          <section id="snippets" class="band">
+            <div class="section-head">
+              <p class="eyebrow">À recoder vite</p>
+              <h2>Snippets essentiels</h2>
+              <p>Ces blocs condensent les gestes qui reviennent souvent en TP.</p>
+            </div>
+
+            <div class="snippet-list">
+              <article class="snippet">
+                <h3>Initialisation minimale</h3>
+                <pre><code>const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+container.appendChild(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+camera.position.set(0, 2, 10);
+camera.lookAt(0, 0, 0);
+
+const scene = new THREE.Scene();</code></pre>
+              </article>
+
+              <article class="snippet">
+                <h3>Resize propre</h3>
+                <pre><code>function onWindowResize() {
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}</code></pre>
+              </article>
+
+              <article class="snippet">
+                <h3>Raycaster souris</h3>
+                <pre><code>const rect = renderer.domElement.getBoundingClientRect();
+mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+raycaster.setFromCamera(mouse, camera);
+const hits = raycaster.intersectObjects(objects, true);</code></pre>
+              </article>
+
+              <article class="snippet">
+                <h3>Latitude/longitude vers sphère</h3>
+                <pre><code>function latLonToVector3(lat, lon, radius) {
+  const phi = lat * Math.PI / 180;
+  const theta = (lon - 180) * Math.PI / 180;
+  return new THREE.Vector3(
+    -radius * Math.cos(phi) * Math.cos(theta),
+     radius * Math.sin(phi),
+     radius * Math.cos(phi) * Math.sin(theta)
+  );
+}</code></pre>
+              </article>
+            </div>
+          </section>
+
+          <section id="memo" class="band muted">
+            <div class="section-head">
+              <p class="eyebrow">Mémo final</p>
+              <h2>Pièges classiques à éviter</h2>
+            </div>
+
+            <div class="mistake-grid">
+              <article><strong>Écran blanc</strong><span>Vérifie la console, le chemin des assets, la caméra, les plans <code>near/far</code> et la lumière.</span></article>
+              <article><strong>Objet noir</strong><span>Un matériau éclairé sans lumière reste noir. Ajoute <code>DirectionalLight</code> ou <code>HemisphereLight</code>.</span></article>
+              <article><strong>Texture absente</strong><span>Le chargement est asynchrone. Vérifie le chemin relatif et le callback <code>onLoad</code>.</span></article>
+              <article><strong>Raycast faux</strong><span>Utilise les coordonnées du canvas si celui-ci ne couvre pas toute la fenêtre.</span></article>
+              <article><strong>Terrain plat</strong><span>Il manque des subdivisions, une <code>displacementMap</code>, ou <code>material.needsUpdate = true</code>.</span></article>
+              <article><strong>Navigation irrégulière</strong><span>Multiplie les déplacements par le temps <code>delta</code> entre deux frames.</span></article>
+              <article><strong>Resize déformé</strong><span>Met à jour <code>camera.aspect</code>, appelle <code>updateProjectionMatrix()</code>, puis <code>renderer.setSize()</code>.</span></article>
+              <article><strong>Sélection bloquée</strong><span>Sauvegarde le matériau original avant d'appliquer le matériau de surbrillance.</span></article>
+            </div>
+          </section>
+
+          <section id="quiz" class="band">
+            <div class="section-head">
+              <p class="eyebrow">Auto-test</p>
+              <h2>Questions flash avant le TP</h2>
+            </div>
+
+            <div class="quiz-list">
+              <details>
+                <summary>Pourquoi faut-il appeler <code>camera.updateProjectionMatrix()</code> après un resize ?</summary>
+                <p>Parce que la matrice de projection dépend de <code>aspect</code>. Sans mise à jour, l'image peut être étirée ou incohérente.</p>
+              </details>
+              <details>
+                <summary>Différence entre <code>normalMap</code> et <code>displacementMap</code> ?</summary>
+                <p><code>normalMap</code> modifie l'éclairage apparent sans déplacer les sommets. <code>displacementMap</code> déplace réellement les sommets de la géométrie.</p>
+              </details>
+              <details>
+                <summary>Pourquoi le TP terrain utilise un plan très subdivisé ?</summary>
+                <p>Le déplacement par heightmap agit sur les sommets. Sans assez de sommets, le relief ne peut pas être détaillé.</p>
+              </details>
+              <details>
+                <summary>À quoi sert <code>raycaster.intersectObjects(objects, true)</code> ?</summary>
+                <p>À tester un rayon contre une liste d'objets. Le paramètre <code>true</code> inclut récursivement les enfants.</p>
+              </details>
+              <details>
+                <summary>Pourquoi utiliser <code>delta</code> dans les contrôles FPS ?</summary>
+                <p>Pour que la distance parcourue dépende du temps réel écoulé, pas du nombre de frames par seconde.</p>
+              </details>
+              <details>
+                <summary>Quand utiliser <code>MeshBasicMaterial</code> ?</summary>
+                <p>Quand l'objet doit rester visible sans lumière, par exemple des marqueurs de capitales ou des objets de debug.</p>
+              </details>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
