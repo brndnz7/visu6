@@ -435,7 +435,7 @@ function setupTraining() {
 
   function updateScore() {
     const done = cards.filter((card) => card.classList.contains('is-complete')).length;
-    scoreLabel.textContent = `${done} / ${cards.length} validé${done > 1 ? 's' : ''}`;
+    scoreLabel.textContent = `${done} / ${cards.length} validé${done === 1 ? '' : 's'}`;
   }
 
   function setFeedback(card, ok, message) {
@@ -532,7 +532,7 @@ function setupTraining() {
     card.sequence = card.sequence || [];
     card.sequence.push(button.dataset.token);
     button.disabled = true;
-    card.querySelector('[data-sequence-answer]').textContent = `Ordre choisi : ${card.sequence.join(' → ')}`;
+    card.querySelector('[data-sequence-answer]').textContent = `Ordre choisi : ${card.sequence.join(' > ')}`;
 
     const expected = card.querySelector('[data-sequence]').dataset.sequence.split(',');
     if (card.sequence.length === expected.length) {
@@ -598,6 +598,257 @@ function setupTraining() {
   updateScore();
 }
 
+function setupCodeStudio() {
+  const drills = [...document.querySelectorAll('[data-code-drill]')];
+  const scoreLabel = document.querySelector('#code-score-label');
+  const resetButton = document.querySelector('#reset-code-drills');
+  if (!drills.length || !scoreLabel) return;
+
+  const storageKey = 'visu3d-code-studio-state';
+  const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+
+  const specs = {
+    init: {
+      hints: [
+        'Commence par WebGLRenderer, puis setSize avec les dimensions du container.',
+        'La caméra doit être une PerspectiveCamera avec fov, aspect, near et far.',
+        'Dans animate, appelle renderer.render(scene, camera), puis requestAnimationFrame(animate).',
+      ],
+      checks: [
+        { label: 'créer WebGLRenderer', test: /new\s+THREE\s*\.\s*WebGLRenderer\s*\(/ },
+        { label: 'dimensionner le renderer', test: /renderer\s*\.\s*setSize\s*\(/ },
+        {
+          label: 'ajouter renderer.domElement',
+          test: (clean) => /(appendChild|append)\s*\(\s*renderer\s*\.\s*domElement\s*\)/.test(clean),
+        },
+        { label: 'créer Scene', test: /new\s+THREE\s*\.\s*Scene\s*\(/ },
+        { label: 'créer PerspectiveCamera', test: /new\s+THREE\s*\.\s*PerspectiveCamera\s*\(/ },
+        { label: 'rendre scene puis camera', test: /renderer\s*\.\s*render\s*\(\s*scene\s*,\s*camera\s*\)/ },
+        { label: 'relancer la boucle', test: /requestAnimationFrame\s*\(\s*animate\s*\)/ },
+      ],
+    },
+    resize: {
+      hints: [
+        'Récupère width et height depuis container.clientWidth et container.clientHeight.',
+        'La caméra change d abord aspect, puis updateProjectionMatrix.',
+        'Le renderer doit recevoir les mêmes dimensions avec renderer.setSize(width, height).',
+      ],
+      checks: [
+        { label: 'lire width', test: /(clientWidth|getBoundingClientRect\s*\(\)\s*\.\s*width)/ },
+        { label: 'lire height', test: /(clientHeight|getBoundingClientRect\s*\(\)\s*\.\s*height)/ },
+        { label: 'mettre camera.aspect', test: /camera\s*\.\s*aspect\s*=/ },
+        { label: 'mettre updateProjectionMatrix', test: /camera\s*\.\s*updateProjectionMatrix\s*\(/ },
+        { label: 'mettre renderer.setSize', test: /renderer\s*\.\s*setSize\s*\(/ },
+      ],
+    },
+    raycaster: {
+      hints: [
+        'Travaille avec renderer.domElement.getBoundingClientRect(), pas seulement window.innerWidth.',
+        'pointer.x vaut une valeur dans [-1, 1]. Le calcul contient rect.left, rect.width, * 2 et - 1.',
+        'pointer.y inverse l axe vertical. Le calcul contient rect.top, rect.height, * 2 et + 1.',
+      ],
+      checks: [
+        { label: 'lire le rectangle du canvas', test: /getBoundingClientRect\s*\(/ },
+        { label: 'calculer x avec rect.left', test: (clean, compact) => compact.includes('rect.left') && compact.includes('*2-1') },
+        { label: 'calculer y avec rect.top', test: (clean, compact) => compact.includes('rect.top') && compact.includes('*2+1') },
+        { label: 'setFromCamera', test: /raycaster\s*\.\s*setFromCamera\s*\(/ },
+        { label: 'intersectObjects récursif', test: (clean) => /intersectObjects\s*\([^)]*,\s*true\s*\)/.test(clean) },
+      ],
+    },
+    globe: {
+      hints: [
+        'Utilise un seul TextureLoader, puis loader.load pour chaque image.',
+        'Le matériau attendu est MeshPhongMaterial, car normalMap et specularMap dépendent de la lumière.',
+        'Ajoute une lumière ambiante pour déboucher, puis une directionnelle pour simuler le soleil.',
+      ],
+      checks: [
+        { label: 'créer TextureLoader', test: /new\s+THREE\s*\.\s*TextureLoader\s*\(/ },
+        { label: 'charger les images', test: /\.load\s*\(/ },
+        { label: 'créer MeshPhongMaterial', test: /new\s+THREE\s*\.\s*MeshPhongMaterial\s*\(/ },
+        { label: 'brancher map', test: /\bmap\s*:/ },
+        { label: 'brancher normalMap', test: /\bnormalMap\s*:/ },
+        { label: 'brancher specularMap', test: /\bspecularMap\s*:/ },
+        { label: 'ajouter AmbientLight', test: /new\s+THREE\s*\.\s*AmbientLight\s*\(/ },
+        { label: 'ajouter DirectionalLight', test: /new\s+THREE\s*\.\s*DirectionalLight\s*\(/ },
+      ],
+    },
+    terrain: {
+      hints: [
+        'L image déclenche la suite dans image.onload. Le code avant onload ne peut pas lire les pixels.',
+        'Dessine image dans un canvas avec context.drawImage(image, 0, 0).',
+        'Le matériau reçoit new THREE.CanvasTexture(canvas), puis material.needsUpdate = true.',
+      ],
+      checks: [
+        { label: 'créer Image', test: /new\s+Image\s*\(/ },
+        { label: 'attendre onload', test: /image\s*\.\s*onload\s*=/ },
+        { label: 'créer canvas', test: /document\s*\.\s*createElement\s*\(\s*['"]canvas['"]\s*\)/ },
+        { label: 'obtenir context 2d', test: /getContext\s*\(\s*['"]2d['"]\s*\)/ },
+        { label: 'dessiner image', test: /drawImage\s*\(/ },
+        { label: 'lire getImageData', test: /getImageData\s*\(/ },
+        { label: 'créer CanvasTexture', test: /new\s+THREE\s*\.\s*CanvasTexture\s*\(/ },
+        { label: 'brancher displacementMap', test: /material\s*\.\s*displacementMap\s*=/ },
+        { label: 'forcer needsUpdate', test: /material\s*\.\s*needsUpdate\s*=\s*true/ },
+      ],
+    },
+    debug: {
+      hints: [
+        'Le couple near 10 et far 20 coupe un objet placé autour de z = 50.',
+        'MeshPhongMaterial a besoin de lumière. Sans elle, l objet peut paraître noir.',
+        'L ordre de rendu Three.js est renderer.render(scene, camera).',
+      ],
+      checks: [
+        {
+          label: 'corriger near et far',
+          test: (clean) => /PerspectiveCamera\s*\([^)]*(0\.1|1)[^)]*(100|1000|2000)/.test(clean),
+        },
+        { label: 'garder une position caméra', test: /camera\s*\.\s*position\s*\.\s*set\s*\(/ },
+        { label: 'ajouter une lumière', test: /new\s+THREE\s*\.\s*(AmbientLight|DirectionalLight|HemisphereLight)\s*\(/ },
+        { label: 'ajouter earth à la scène', test: /scene\s*\.\s*add\s*\(\s*earth\s*\)/ },
+        { label: 'rendre scene puis camera', test: /renderer\s*\.\s*render\s*\(\s*scene\s*,\s*camera\s*\)/ },
+      ],
+    },
+  };
+
+  function stripComments(code) {
+    return code
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\/\/.*$/gm, ' ');
+  }
+
+  function compactCode(code) {
+    return stripComments(code).replace(/\s+/g, '');
+  }
+
+  function drillId(drill) {
+    return drill.dataset.codeDrill;
+  }
+
+  function updateScore() {
+    const done = drills.filter((drill) => drill.classList.contains('is-complete')).length;
+    const plural = done === 1 ? '' : 's';
+    scoreLabel.textContent = `${done} / ${drills.length} bloc${plural} validé${plural}`;
+  }
+
+  function saveState() {
+    const state = {};
+    drills.forEach((drill) => {
+      const id = drillId(drill);
+      state[id] = {
+        code: drill.querySelector('[data-code-answer]').value,
+        done: drill.classList.contains('is-complete'),
+        hintIndex: Number(drill.dataset.hintIndex || 0),
+      };
+    });
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  }
+
+  function setFeedback(drill, ok, message) {
+    const feedback = drill.querySelector('[data-code-feedback]');
+    feedback.textContent = message;
+    feedback.classList.toggle('is-good', ok);
+    feedback.classList.toggle('is-bad', !ok);
+    drill.classList.toggle('is-complete', ok);
+    saveState();
+    updateScore();
+  }
+
+  function renderHints(drill) {
+    const spec = specs[drillId(drill)];
+    const hintBox = drill.querySelector('[data-hint-box]');
+    const hintIndex = Number(drill.dataset.hintIndex || 0);
+    const hints = spec.hints.slice(0, hintIndex);
+
+    hintBox.classList.toggle('is-empty', hints.length === 0);
+    hintBox.innerHTML = hints.length
+      ? `<ol>${hints.map((hint) => `<li>${hint}</li>`).join('')}</ol>`
+      : 'Aucun indice utilisé.';
+  }
+
+  function revealHint(drill) {
+    const spec = specs[drillId(drill)];
+    const current = Number(drill.dataset.hintIndex || 0);
+    drill.dataset.hintIndex = String(Math.min(spec.hints.length, current + 1));
+    renderHints(drill);
+    saveState();
+  }
+
+  function validateDrill(drill) {
+    const spec = specs[drillId(drill)];
+    const textarea = drill.querySelector('[data-code-answer]');
+    const clean = stripComments(textarea.value);
+    const compact = compactCode(textarea.value);
+    const missing = spec.checks
+      .filter((check) => {
+        if (typeof check.test === 'function') return !check.test(clean, compact);
+        return !check.test.test(clean);
+      })
+      .map((check) => check.label);
+
+    if (!missing.length) {
+      setFeedback(drill, true, 'Validé. Tu as les gestes essentiels, retape ce bloc plus tard sans indice.');
+      return;
+    }
+
+    const plural = missing.length > 1 ? 's' : '';
+    setFeedback(
+      drill,
+      false,
+      `Il manque ${missing.length} réflexe${plural} : ${missing.join(', ')}.`,
+    );
+  }
+
+  drills.forEach((drill) => {
+    const id = drillId(drill);
+    const textarea = drill.querySelector('[data-code-answer]');
+    const feedback = drill.querySelector('[data-code-feedback]');
+    textarea.dataset.initialCode = textarea.value;
+
+    if (saved[id] && Object.hasOwn(saved[id], 'code')) textarea.value = saved[id].code;
+    drill.dataset.hintIndex = String(saved[id]?.hintIndex || 0);
+    if (saved[id]?.done) {
+      drill.classList.add('is-complete');
+      feedback.textContent = 'Déjà validé. Reviens dessus à froid pour consolider.';
+      feedback.classList.add('is-good');
+    }
+
+    renderHints(drill);
+
+    textarea.addEventListener('input', () => {
+      if (drill.classList.contains('is-complete')) {
+        drill.classList.remove('is-complete');
+        feedback.textContent = 'Code modifié. Teste à nouveau pour valider.';
+        feedback.classList.remove('is-good');
+        feedback.classList.add('is-bad');
+      }
+      saveState();
+      updateScore();
+    });
+
+    drill.querySelector('[data-run-code-drill]')?.addEventListener('click', () => validateDrill(drill));
+    drill.querySelector('[data-next-hint]')?.addEventListener('click', () => revealHint(drill));
+  });
+
+  resetButton?.addEventListener('click', () => {
+    localStorage.removeItem(storageKey);
+    drills.forEach((drill) => {
+      const textarea = drill.querySelector('[data-code-answer]');
+      const feedback = drill.querySelector('[data-code-feedback]');
+      textarea.value = textarea.dataset.initialCode;
+      drill.dataset.hintIndex = '0';
+      drill.classList.remove('is-complete');
+      feedback.textContent = '';
+      feedback.classList.remove('is-good', 'is-bad');
+      drill.querySelectorAll('details').forEach((details) => {
+        details.open = false;
+      });
+      renderHints(drill);
+    });
+    updateScore();
+  });
+
+  updateScore();
+}
+
 function setupExamTimer() {
   const startButton = document.querySelector('#start-exam');
   const resetButton = document.querySelector('#reset-exam');
@@ -641,6 +892,7 @@ function setupExamTimer() {
 
 setupProgress();
 setupTraining();
+setupCodeStudio();
 setupExamTimer();
 buildGlobe();
 animate();
