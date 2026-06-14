@@ -849,6 +849,79 @@ function setupCodeStudio() {
   updateScore();
 }
 
+function setupRevealMotion() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const elements = [
+    ...document.querySelectorAll(
+      '.band, .training-dashboard article, .practice-card, .code-drill, .lesson-card, .tp-card, .asset-grid figure, .snippet, .mistake-grid article, .quiz-list details',
+    ),
+  ];
+
+  if (reducedMotion || !('IntersectionObserver' in window)) {
+    elements.forEach((element) => element.classList.add('is-visible'));
+    return;
+  }
+
+  elements.forEach((element, index) => {
+    element.classList.add('reveal-ready');
+    element.style.setProperty('--reveal-delay', `${Math.min((index % 5) * 45, 180)}ms`);
+  });
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    },
+    {
+      rootMargin: '0px 0px -10% 0px',
+      threshold: 0.12,
+    },
+  );
+
+  elements.forEach((element) => observer.observe(element));
+}
+
+function setupSectionSpy() {
+  const links = [...document.querySelectorAll('.topnav a[href^="#"], .toc a[href^="#"]')];
+  if (!links.length || !('IntersectionObserver' in window)) return;
+
+  const trackedIds = new Set(
+    links
+      .map((link) => link.getAttribute('href')?.slice(1))
+      .filter(Boolean),
+  );
+  const sections = [...document.querySelectorAll('main [id]')].filter((section) => trackedIds.has(section.id));
+
+  function setActive(id) {
+    links.forEach((link) => {
+      const isActive = link.getAttribute('href') === `#${id}`;
+      if (isActive) {
+        link.setAttribute('aria-current', 'true');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const activeEntry = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+      if (activeEntry) setActive(activeEntry.target.id);
+    },
+    {
+      rootMargin: '-26% 0px -58% 0px',
+      threshold: [0.08, 0.24, 0.5],
+    },
+  );
+
+  sections.forEach((section) => observer.observe(section));
+}
+
 function setupExamTimer() {
   const startButton = document.querySelector('#start-exam');
   const resetButton = document.querySelector('#reset-exam');
@@ -893,6 +966,8 @@ function setupExamTimer() {
 setupProgress();
 setupTraining();
 setupCodeStudio();
+setupRevealMotion();
+setupSectionSpy();
 setupExamTimer();
 buildGlobe();
 animate();
